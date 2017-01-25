@@ -58,12 +58,7 @@ abstract class Autoloader
     {
         self::unregisterClassCacheAutoloader();
 
-        // First, trying to get module list from DB
-        $activeModules = array_keys(
-            array_filter(Utils\ModulesManager::fetchModulesListFromDB(), function ($module) {
-                return $module['enabled'];
-            })
-        );
+        $activeModules = array_keys(Utils\ModulesManager::getActiveModules());
 
         // If module list is empty (we're on cache rebuild), then call ModulesManager::getActiveModules
         if (empty($activeModules)) {

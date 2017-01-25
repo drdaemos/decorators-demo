@@ -23,18 +23,12 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
     /**
      * Pattern to get module name by class name
      */
-    const CLASS_NAME_PATTERN = '/(?:\\\)?XLite\\\Module\\\(\w+\\\\\w+)(\\\|$)/US';
+    const CLASS_NAME_PATTERN = '/(?:\\)?' . LC_NAMESPACE . '\\' . LC_MODULE_NAMESPACE . '\\(\w+?)/S';
 
     /**
      * Modules list file name
      */
     const MODULES_FILE_NAME = '.decorator.modules.ini.php';
-    const XC_FREE_LICENSE_KEY = 'XC5-FREE-LICENSE';
-
-    /**
-     * Restore point date internal format
-     */
-    const RESTORE_DATE_FORMAT = 'Y_m_d_H_i_s';
 
     /**
      * List of active modules
@@ -62,17 +56,6 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
      */
     protected static $quotedPaths;
 
-    /**
-     * Get modules migration log file name
-     *
-     * @return string
-     */
-    protected static function getModuleMigrationLogFile()
-    {
-        return LC_DIR_SERVICE . '.modules.migrations.php';
-    }
-
-
     // {{{ Name conversion routines
 
     /**
@@ -82,9 +65,9 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
      *
      * @return string
      */
-    public static function getClassNameByModuleName($moduleName)
+    public static function getModuleDefinitionClass($moduleName)
     {
-        return '\XLite\Module\\' . $moduleName . '\Main';
+        return LC_NAMESPACE . LC_DS . LC_MODULE_NAMESPACE . LC_DS . LC_MODULE_DEFINITION;
     }
 
     /**
@@ -110,19 +93,6 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
     public static function getActualName($author, $name)
     {
         return $author . '\\' . $name;
-    }
-
-    /**
-     * Compose module class name by module author and name
-     *
-     * @param string $author Module author
-     * @param string $name   Module name
-     *
-     * @return string
-     */
-    public static function getClassNameByAuthorAndName($author, $name)
-    {
-        return static::getClassNameByModuleName(static::getActualName($author, $name));
     }
 
     /**
@@ -240,7 +210,7 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
      */
     public static function isModuleInstalled($module)
     {
-        return \Includes\Utils\Operator::checkIfClassExists(static::getClassNameByModuleName($module));
+        return \Includes\Utils\Operator::checkIfClassExists(static::getModuleDefinitionClass($module));
     }
 
     /**
@@ -257,7 +227,7 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
         $result = null;
 
         if (static::isModuleInstalled($module)) {
-            $result = call_user_func_array(array(static::getClassNameByModuleName($module), $method), $args);
+            $result = call_user_func_array(array(static::getModuleDefinitionClass($module), $method), $args);
         }
 
         return $result;
@@ -375,9 +345,6 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
             // Remove unsupported modules from list
             static::checkVersions();
 
-            // Remove unsafe modules
-            static::performSafeModeProtection();
-
             // Remove modules with corrupted dependencies
             static::correctDependencies();
 
@@ -444,11 +411,9 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
     {
         $modules = array();
 
-        if (!\Includes\Utils\ConfigParser::getOptions(array('performance', 'ignore_system_modules'))) {
-            foreach (static::getModulesList() as $module => $data) {
-                if (static::callModuleMethod($module, 'isSystem')) {
-                    $modules[$module] = $data;
-                }
+        foreach (static::getModulesList() as $module => $data) {
+            if (static::callModuleMethod($module, 'isSystem')) {
+                $modules[$module] = $data;
             }
         }
 
@@ -567,40 +532,6 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
 
         // Disable modules
         array_walk($modules, array('static', 'disableModule'));
-
-        $date = \DateTime::createFromFormat(static::RESTORE_DATE_FORMAT, $restorePoint['date']);
-        \Includes\Decorator\Utils\PersistentInfo::set('restoredTo', $date->getTimestamp());
-
-        $restorationRecord = static::getRestorationRecord($restorePoint['date']);
-        static::updateModuleMigrationLog($restorationRecord);
-    }
-
-    /**
-     * Disable some (or all) modules in SafeMode
-     *
-     * @return void
-     */
-    protected static function performSafeModeProtection()
-    {
-        if (\Includes\SafeMode::isSafeModeStarted()) {
-            if (!\Includes\SafeMode::isRestoreDateSet()) {
-                // Get unsafe modules list
-                $modules = \Includes\SafeMode::isSoftResetRequested()
-                    ? static::getSoftDisableList()
-                    : static::getHardDisableList();
-
-                // Disable modules
-                array_walk($modules, array('static', 'disableModule'));
-            } else {
-                $restorePoint = static::getRestorePoint(\Includes\SafeMode::getRestoreDate());
-                if (static::isRestorePointValid($restorePoint)) {
-                    //modules to disable
-                    static::restoreToPoint($restorePoint);
-                }
-            }
-
-            \Includes\SafeMode::cleanupIndicator();
-        }
     }
 
     /**
@@ -872,106 +803,6 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
         } elseif (\Includes\Utils\FileManager::isExists($path)) {
             \Includes\Utils\FileManager::deleteFile($path);
         }
-    }
-
-    /**
-     * Read modules migration log and return it as array of restoration points
-     *
-     * @return array|null
-     */
-    public static function readModuleMigrationLog()
-    {
-        $data = null;
-        if (\Includes\Utils\FileManager::isFileReadable(static::getModuleMigrationLogFile())) {
-            ob_start();
-            $log = @include(static::getModuleMigrationLogFile());
-            ob_get_clean();
-            if (!empty($log) && is_array($log)) {
-                $data = $log;
-            }
-        }
-        return $data;
-    }
-
-    /**
-     * Store current modules state for further restoration
-     *
-     * @param array|null     $restorePoint modules migration data
-     *
-     * @return void
-     */
-    public static function updateModuleMigrationLog($restorePoint)
-    {
-        $migrations = static::readModuleMigrationLog();
-        if (empty($migrations)) {
-            $migrations = array();
-        }
-
-        $migrations[$restorePoint['date']] = $restorePoint;
-
-        $serialized = "<?php\nreturn " . var_export($migrations, true) . ';';
-        \Includes\Utils\FileManager::write(static::getModuleMigrationLogFile(), $serialized);
-    }
-
-    /**
-     * Returns restore point from migration log if it exists
-     *
-     * @param string     $date restore point date in RESTORE_DATE_FORMAT format
-     *
-     * @return array
-     */
-    public static function getRestorePoint($date)
-    {
-        $restorePoint = null;
-        $migrations = static::readModuleMigrationLog();
-        if (!empty($migrations) && static::isRestorePointValid($migrations[$date])) {
-            $restorePoint = $migrations[$date];
-        }
-        return $restorePoint;
-    }
-
-    /**
-     * Checks if snapshot is valid
-     *
-     * @param array     $point restore point data
-     *
-     * @return boolean
-     */
-    public static function isRestorePointValid($point)
-    {
-        return $point && is_array($point) && isset($point['date']) && isset($point['current']);
-    }
-
-    /**
-     * Returns empty restore point structure to be filled later
-     *
-     * @return array
-     */
-    public static function getEmptyRestorePoint()
-    {
-        return array(
-            'date' => date(static::RESTORE_DATE_FORMAT),
-            'current' => array(),
-            'enabled' => array(),
-            'disabled' => array(),
-            'deleted' => array(),
-            'installed' => array()
-        );
-    }
-
-    /**
-     * Returns empty record about successful restoration
-     *
-     * @param string $restoredTo restore point date in RESTORE_DATE_FORMAT
-     *
-     * @return array
-     */
-    public static function getRestorationRecord($restoredTo)
-    {
-        return array(
-            'date' => date(static::RESTORE_DATE_FORMAT),
-            'restoredTo' => $restoredTo,
-        );
     }
 
     /**
@@ -1268,45 +1099,6 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
 
     // }}}
 
-    // {{{ DB-related routines
-
-    /**
-     * Fetch modules list from the database
-     *
-     * @return array
-     */
-    public static function fetchModulesListFromDB()
-    {
-        $field = static::getModuleNameField();
-        $table = static::getTableName();
-
-        return static::checkTable('modules') ? \Includes\Utils\Database::fetchAll(
-            'SELECT ' . $field . $table . '.* FROM ' . $table . ' WHERE installed = ?',
-            array(1),
-            \PDO::FETCH_ASSOC | \PDO::FETCH_GROUP | \PDO::FETCH_UNIQUE
-        ) : array();
-    }
-
-    /**
-     * Return name of the table where the module info is stored
-     *
-     * @return string
-     */
-    protected static function getTableName()
-    {
-        return get_db_tables_prefix() . 'modules';
-    }
-
-    /**
-     * Part of SQL query to fetch composed module name
-     *
-     * @return string
-     */
-    protected static function getModuleNameField()
-    {
-        return 'CONCAT(author,\'\\\\\',name) AS actualName, ';
-    }
-
     // {{{ List of all modules
 
     protected static $cachedModulesList;
@@ -1388,161 +1180,6 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
         }
     }
 
-    /**
-     * Write module info to DB
-     *
-     * @param string  $author              Module author
-     * @param string  $name                Module name
-     * @param boolean $isModulesFileExists Flag: true means that the installation process is going now OPTIONAL
-     *
-     * @return void
-     */
-    public static function switchModule($author, $name, $isModulesFileExists = false)
-    {
-        // Short names
-        $condition = ' WHERE author = ? AND name = ?';
-        $table     = static::getTableName();
-        $module    = static::getActualName($author, $name);
-
-        // Versions
-        $majorVersion = static::callModuleMethod($module, 'getMajorVersion');
-        $minorVersion = static::callModuleMethod($module, 'getMinorVersion');
-        $build = static::callModuleMethod($module, 'getBuildVersion') ?: 0;
-
-        // Reset existing settings
-        $query = 'UPDATE ' . $table . ' SET enabled = ?, installed = ?' . $condition;
-        \Includes\Utils\Database::execute($query, array(0, 0, $author, $name));
-
-        // Search for module
-        $fields = array('moduleID', 'majorVersion', 'minorVersion', 'build');
-        $condition .= ' AND fromMarketplace = ?';
-
-        if (!$isModulesFileExists) {
-            $fields[] = 'yamlLoaded';
-        }
-
-        $query = 'SELECT ' . implode(', ', $fields) . ' FROM ' . $table . $condition;
-
-        $moduleRows = \Includes\Utils\Database::fetchAll(
-            $query,
-            array($author, $name, 0)
-        );
-
-        $needToLoadYaml = false;
-
-        $delQueries = array();
-
-        // If found in DB
-        if ($moduleRows) {
-
-            // Choose for update first row or first row with yamlLoaded=1
-            $mid = 0;
-            for ($i = 0; $i < count($moduleRows); $i++) {
-                if ($moduleRows[$i]['yamlLoaded']) {
-                    $mid = $i;
-                    break;
-                }
-            }
-
-            $moduleID = (int) $moduleRows[$mid]['moduleID'];
-            $yamlLoaded = (int) $moduleRows[$mid]['yamlLoaded'];
-            $moduleName   = static::callModuleMethod($module, 'getModuleName');
-            $moduleDesc   = static::callModuleMethod($module, 'getDescription');
-
-            $params = array(
-                'enabled = ?',
-                'installed = ?',
-                'moduleName = ?',
-                'description = ?',
-                'majorVersion = ?',
-                'minorVersion = ?',
-                'build = ?',
-            );
-
-            $data  = array(
-                (int) static::isActiveModule($module), // enabled
-                1,                                     // installed
-                $moduleName,                           // moduleName
-                $moduleDesc,                           // description
-                $majorVersion,                         // majorVersion
-                $minorVersion,                         // minorVersion
-                $build,                                // build
-            );
-
-            if (!$yamlLoaded && static::isActiveModule($module)) {
-                $params[] = 'yamlLoaded = ?';
-                $data[] = 1;
-                $needToLoadYaml = true;
-            }
-
-            $data[] = $moduleID;
-
-            $query = 'UPDATE ' . $table . ' SET ' . implode(', ', $params) . ' WHERE moduleID = ?';
-
-            // Remove updated row from list
-            unset($moduleRows[$mid]);
-
-            // Prepare queries to delete the rest rows
-            foreach ($moduleRows as $mdata) {
-                $delQueries[] = array(
-                    'sql' => 'DELETE FROM ' . $table . ' WHERE moduleID = ?',
-                    'params' => array($mdata['moduleID']),
-                );
-            }
-
-        } else {
-            $data  = static::getModuleDataFromClass($author, $name);
-
-            if ($data['enabled']) {
-                $data['yamlLoaded'] = 1;
-            }
-            $data['isSkin'] = (int) static::callModuleMethod($module, 'isSkinModule');
-
-            $query = 'REPLACE INTO ' . $table . ' SET ' . implode(' = ?,', array_keys($data)) . ' = ?';
-        }
-
-        if (static::isActiveModule($module) && $needToLoadYaml && !$isModulesFileExists) {
-            static::addModuleYamlFile($author, $name);
-        }
-
-        // Delete redundant rows from DB
-        foreach ($delQueries as $qData) {
-           \Includes\Utils\Database::execute($qData['sql'], $qData['params']);
-        }
-
-        // Save changes in DB
-        \Includes\Utils\Database::execute($query, array_values($data));
-    }
-
-    /**
-     * Add module's install.yaml file to the fixtures list file
-     *
-     * @param string $author Module author
-     * @param string $name   Module name
-     *
-     * @return void
-     */
-    protected static function addModuleYamlFile($author, $name)
-    {
-        $dir = 'classes' . LC_DS
-            . LC_NAMESPACE . LC_DS
-            . LC_MODULE_NAMESPACE . LC_DS
-            . $author . LC_DS
-            . $name;
-
-        $file = $dir . LC_DS . 'install.yaml';
-
-        if (\Includes\Utils\FileManager::isFileReadable($file)) {
-            \Includes\Decorator\Plugin\Doctrine\Utils\FixturesManager::addFixtureToList($file);
-        }
-
-        foreach ((array) glob($dir . LC_DS . 'install_*.yaml') as $translationFile) {
-            if (\Includes\Utils\FileManager::isFileReadable($translationFile)) {
-                \Includes\Decorator\Plugin\Doctrine\Utils\FixturesManager::addFixtureToList($translationFile);
-            }
-        }
-    }
-
     // }}}
 
     // {{{ Module paths
@@ -1554,14 +1191,14 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
      */
     public static function getPathPatternForPHP()
     {
-        $root = preg_quote(\Includes\Decorator\ADecorator::getClassesDir(), '/') . 'XLite';
+        $root = preg_quote(\Includes\Decorator\ADecorator::getClassesDir(), '/') . LC_NAMESPACE;
         $modules = '(' . implode('|', static::getModuleQuotedPaths()) . ')';
 
         return '/^(?:'
-            . $root . LC_DS_QUOTED . '((?!Module)[a-zA-Z0-9]+)' . LC_DS_QUOTED . '.+'
-            . '|' . $root . LC_DS_QUOTED . 'Module' . LC_DS_QUOTED . $modules . LC_DS_QUOTED . '.+'
+            . $root . LC_DS_QUOTED . '((?!' . LC_MODULE_NAMESPACE . ')[a-zA-Z0-9]+)' . LC_DS_QUOTED . '.+'
+            . '|' . $root . LC_DS_QUOTED . LC_MODULE_NAMESPACE . LC_DS_QUOTED . $modules . LC_DS_QUOTED . '.+'
             . '|' . $root
-            . '|' . $root . LC_DS_QUOTED . 'Module' . LC_DS_QUOTED . '[a-zA-Z0-9]+'
+            . '|' . $root . LC_DS_QUOTED . LC_MODULE_NAMESPACE . LC_DS_QUOTED . '[a-zA-Z0-9]+'
             . '|' . $root . LC_DS_QUOTED . '[a-zA-Z0-9]+'
             . ')\.php$/Ss';
     }

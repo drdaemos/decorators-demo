@@ -24,6 +24,7 @@ define('LC_NAMESPACE', 'DecoratorsDemo');
 define('LC_NAMESPACE_INCLUDES', 'Includes');
 define('LC_DECORATED_MARK', 'Original');
 define('LC_MODULE_NAMESPACE', 'Module');
+define('LC_MODULE_DEFINITION', 'Definition');
 
 // Paths
 define('LC_DIR',                 realpath(__DIR__));

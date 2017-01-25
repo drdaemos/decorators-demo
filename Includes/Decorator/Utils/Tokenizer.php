@@ -129,7 +129,7 @@ abstract class Tokenizer extends \Includes\Decorator\Utils\AUtils
         $limit = ini_get('pcre.backtrack_limit') ?: 100000;
 
         return (bool) preg_match(
-            '/^\s*(?:(?:absract|static|public|protected|private)\s+)*function\s+' . $method . '\s*\(/Sm',
+            '/^\s*(?:(?:abstract|static|public|protected|private)\s+)*function\s+' . $method . '\s*\(/Sm',
             static::getContentHead(static::getContent($path), $limit)
         );
     }
