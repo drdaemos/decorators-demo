@@ -12,7 +12,7 @@ use Doctrine\Common\Annotations\AnnotationException;
 use Includes\Annotations\Parser\AnnotationParserInterface;
 use Includes\ClassPathResolverInterface;
 use Includes\Decorator\Utils\Tokenizer;
-use XLite\Logger;
+use Includes\Utils\Logger;
 
 class StaticReflector implements StaticReflectorInterface
 {
@@ -120,7 +120,7 @@ class StaticReflector implements StaticReflectorInterface
         try {
             return $this->annotationParser->parse($this->getDocCommentText());
         } catch (AnnotationException $e) {
-            $this->getLogger()->log(sprintf('AnnotationException: %s (%s)', $e->getMessage(), $this->getPathname()), LOG_WARNING);
+            $this->getLogger()->log('WARNING', sprintf('AnnotationException: %s (%s)', $e->getMessage(), $this->getPathname()));
 
             return [];
         }
@@ -257,29 +257,6 @@ class StaticReflector implements StaticReflectorInterface
         }
 
         return $modules;
-    }
-
-    public function isEntity()
-    {
-        return $this->isModel() && $this->getClassAnnotationsOfType('Doctrine\ORM\Mapping\Entity');
-    }
-
-    public function isMappedSuperclass()
-    {
-        return $this->isModel() && $this->getClassAnnotationsOfType('Doctrine\ORM\Mapping\MappedSuperclass');
-    }
-
-    public function hasLifecycleCallbacks()
-    {
-        return $this->isModel() && $this->getClassAnnotationsOfType('Doctrine\ORM\Mapping\HasLifecycleCallbacks');
-    }
-
-    private function isModel()
-    {
-        $parts = explode('\\', $this->getNamespace());
-
-        return count($parts) > 1 && $parts[1] == 'Model'
-               || count($parts) > 4 && $parts[1] == 'Module' && $parts[4] == 'Model';
     }
 
     /**

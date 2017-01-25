@@ -78,12 +78,4 @@ interface StaticReflectorInterface
      * @return array
      */
     public function getBeforeModules();
-
-    // Doctrine entities
-
-    public function isEntity();
-
-    public function isMappedSuperclass();
-
-    public function hasLifecycleCallbacks();
 }

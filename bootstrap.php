@@ -28,10 +28,12 @@ define('LC_MODULE_NAMESPACE', 'Module');
 // Paths
 define('LC_DIR',                 realpath(__DIR__));
 define('LC_DIR_ROOT',            rtrim(LC_DIR, LC_DS) . LC_DS);
+define('LC_DIR_VAR',             LC_DIR_ROOT . 'var' . LC_DS);
 define('LC_DIR_CLASSES',         LC_DIR_ROOT . 'classes' . LC_DS);
 define('LC_DIR_INCLUDES',        LC_DIR_ROOT . LC_NAMESPACE_INCLUDES . LC_DS);
 define('LC_DIR_MODULES',         LC_DIR_CLASSES . LC_NAMESPACE . LC_DS . LC_MODULE_NAMESPACE . LC_DS);
 define('LC_DIR_COMPILE',         LC_DIR_VAR . 'run' . LC_DS);
+define('LC_DIR_LOGS',            LC_DIR_VAR . 'log' . LC_DS);
 define('LC_DIR_CACHE_CLASSES',   LC_DIR_COMPILE . 'classes' . LC_DS);
 define('LC_DIR_CACHE_MODULES',   LC_DIR_CACHE_CLASSES . LC_NAMESPACE . LC_DS . LC_MODULE_NAMESPACE . LC_DS);
 

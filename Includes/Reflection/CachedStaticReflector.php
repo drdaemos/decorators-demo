@@ -183,33 +183,6 @@ class CachedStaticReflector extends StaticReflector implements SerializableState
         return $this->cachedState['negativeDependencies'];
     }
 
-    public function isEntity()
-    {
-        if (!isset($this->cachedState['isEntity'])) {
-            $this->cachedState['isEntity'] = parent::isEntity();
-        }
-
-        return $this->cachedState['isEntity'];
-    }
-
-    public function isMappedSuperclass()
-    {
-        if (!isset($this->cachedState['isMappedSuperclass'])) {
-            $this->cachedState['isMappedSuperclass'] = parent::isMappedSuperclass();
-        }
-
-        return $this->cachedState['isMappedSuperclass'];
-    }
-
-    public function hasLifecycleCallbacks()
-    {
-        if (!isset($this->cachedState['hasLifecycleCallbacks'])) {
-            $this->cachedState['hasLifecycleCallbacks'] = parent::hasLifecycleCallbacks();
-        }
-
-        return $this->cachedState['hasLifecycleCallbacks'];
-    }
-
     public function serializeState()
     {
         return serialize($this->cachedState);
