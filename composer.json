@@ -1,0 +1,16 @@
+{
+    "name": "drdaemos/decorators-demo",
+    "type": "project",
+    "require": {
+        "doctrine/annotations": "^1.3",
+        "marcj/topsort": "^1.1"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Eugene Dementjev",
+            "email": "daemos@x-cart.com"
+        }
+    ],
+    "minimum-stability": "alpha"
+}
