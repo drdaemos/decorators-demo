@@ -231,8 +231,8 @@ class ClassBuilder extends AbstractClassBuilder
     {
         $parts = explode('\\', $class);
 
-        return count($parts) > 2 && $parts[1] == LC_MODULE_NAMESPACE
-            ? $parts[1]
+        return count($parts) > 3 && $parts[1] == LC_MODULE_NAMESPACE
+            ? $parts[2]
             : null;
     }
 

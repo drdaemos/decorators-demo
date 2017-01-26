@@ -8,7 +8,7 @@
 
 namespace Includes\Reflection;
 
-use Includes\Annotations\Parser\AnnotationParserInterface;
+use Doctrine\Common\Annotations\DocParser;
 use Includes\ClassPathResolverInterface;
 
 class CachedStaticReflector extends StaticReflector implements SerializableState
@@ -16,7 +16,7 @@ class CachedStaticReflector extends StaticReflector implements SerializableState
     private $cachedState = [];
 
     public function __construct(
-        ClassPathResolverInterface $classPathResolver, AnnotationParserInterface $annotationParser, $pathname
+        ClassPathResolverInterface $classPathResolver, DocParser $annotationParser, $pathname
     ) {
         parent::__construct($classPathResolver, $annotationParser, $pathname);
     }

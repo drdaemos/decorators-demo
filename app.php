@@ -7,7 +7,7 @@ try {
     require_once (dirname(__FILE__) . DIRECTORY_SEPARATOR . 'bootstrap.php');
 
     // Run app code
-    $app = \DecoratorsDemo\App();
+    $app = new \DecoratorsDemo\App();
     $app->run();
 
 } catch (\Exception $e) {

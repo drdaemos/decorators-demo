@@ -35,6 +35,6 @@ class Module implements ModuleInterface
 
     public function getPath()
     {
-        return $this->sourceClassPathResolver->getFullPath(LC_MODULE_NAMESPACE . '/' . str_replace('\\', '/', $this->module));
+        return $this->sourceClassPathResolver->getFullPath(LC_NAMESPACE . LC_DS . LC_MODULE_NAMESPACE . LC_DS . str_replace('\\', '/', $this->module));
     }
 }

@@ -9,7 +9,7 @@ try {
     require_once (dirname(__FILE__) . DIRECTORY_SEPARATOR . 'bootstrap.php');
 
     // Run app code
-    echo 'rebuild is ready!';
+    echo PHP_EOL . 'App has been deployed successfully' . PHP_EOL;
 
 } catch (\Exception $e) {
     \Includes\ErrorHandler::handleException($e);

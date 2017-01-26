@@ -1,9 +1,9 @@
 <?php
 
-namespace DecoratorsDemo\Module;
+namespace Includes\Module;
 
 interface DefinitionInterface {
-    
+
     /**
      * Method to initialize concrete module instance
      *

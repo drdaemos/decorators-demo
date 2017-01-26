@@ -24,10 +24,10 @@ class Logger extends \Includes\Pattern\Singleton
     protected function __construct()
     {
         $this->logger = new \Monolog\Logger('decorators-demo');
-        $this->logger->pushHandler(new StreamHandler(LC_DIR_LOGS . 'decorators', Logger::WARNING));
+        $this->logger->pushHandler(new StreamHandler(LC_DIR_LOGS . 'decorators', \Monolog\Logger::WARNING));
     }
 
-    public function __call(string $name , array $arguments)
+    public function __call($name, $arguments)
     {
         return call_user_func_array(array($this->logger, $name), $arguments);
     }

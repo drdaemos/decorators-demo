@@ -159,26 +159,7 @@ abstract class CacheManager extends \Includes\Decorator\Utils\AUtils
      */
     public static function logMessage($message)
     {
-        $newLine = substr($message, -1 * strlen(PHP_EOL)) === PHP_EOL;
-
-        $message = preg_replace(
-            array(
-                '/<script[^>]*>.+<\/script>/USs',
-            ),
-            array(
-                '',
-            ),
-            $message
-        );
-
-        $message = strip_tags($message);
-        $message = preg_replace('/(\s)+/', '\1', trim($message));
-        $path = LC_DIR_LOG . 'decorator.log.' . date('Y-m-d') . '.php';
-        if (!\Includes\Utils\FileManager::isExists($path)) {
-            $message = '<' . '?php die(); ?' . '>' . PHP_EOL . $message;
-        }
-
-        \Includes\Utils\FileManager::write($path, $message . ($newLine ? PHP_EOL : ''), FILE_APPEND);
+        \Includes\Utils\Logger::getInstance()->info($message);
     }
 
     /**
@@ -695,7 +676,9 @@ OUT;
                 }
             }
 
-            \Includes\Utils\Operator::refresh($arguments);
+            if (!LC_IS_CLI_MODE) {
+                \Includes\Utils\Operator::refresh($arguments);
+            }
         }
     }
 
@@ -726,9 +709,6 @@ OUT;
         // Block software before move directories
         static::setRebuildBlockMark(static::LAST_STEP);
 
-        // Move datacache
-        static::clearOldDatacache();
-
         // Set finalize timestamp
         \Includes\Decorator\Utils\CacheInfo::set('finalizeRebuild', time());
 
@@ -746,9 +726,6 @@ OUT;
 
         // Remove rebuild block mark
         static::unsetRebuildBlockMark();
-
-        // Remove migration file
-        SchemaMigrationManager::removeMigration();
 
         // Remove cache info #2
         \Includes\Decorator\Utils\CacheInfo::remove();
@@ -780,10 +757,6 @@ OUT;
             define('LC_CACHE_BUILDING', true);
         }
 
-        if (!defined('LC_USE_CLEAN_URLS')) {
-            define('LC_USE_CLEAN_URLS', false);
-        }
-
         // Initialize logging
         static::initializeLogging();
 
@@ -792,9 +765,6 @@ OUT;
 
         // Write indicator files and show the message
         static::startStep($step);
-
-        // Set version key for view lists
-        static::setViewListsVersionKey();
 
         // Perform step-specific actions
         \Includes\Utils\Operator::executeWithCustomMaxExecTime(
@@ -845,9 +815,6 @@ OUT;
         $steps = array(
             static::STEP_FIRST,
             static::STEP_SECOND,
-            static::STEP_THIRD,
-            static::STEP_FOURTH,
-            static::STEP_FIFTH
         );
 
         if (!in_array(static::$step, $steps)
@@ -855,17 +822,6 @@ OUT;
         ) {
             \XLite\Model\ViewList::setVersionKey(\Includes\Decorator\Utils\CacheManager::getKey());
         }
-    }
-
-    /**
-     * Clear old datacache
-     *
-     * @return void
-     */
-    protected static function clearOldDatacache()
-    {
-        $old = new \XLite\Core\Cache(null, array('original' => true));
-        $old->flushAll();
     }
 
     // }}}
@@ -1027,9 +983,7 @@ OUT;
     public static function cleanupCache($cleanOriginalDirs = false)
     {
         foreach (static::getCacheDirs($cleanOriginalDirs) as $dir) {
-            if ($cleanOriginalDirs
-                || static::getResourcesDir($cleanOriginalDirs) != $dir
-            ) {
+            if ($cleanOriginalDirs) {
                 \Includes\Utils\FileManager::unlinkRecursive($dir);
                 static::checkPermissions($dir);
             }
@@ -1050,7 +1004,6 @@ OUT;
             static::getLocaleDir($originalDirs),
             static::getDatacacheDir($originalDirs),
             static::getTmpDir($originalDirs),
-            static::getResourcesDir($originalDirs),
         );
     }
 
@@ -1169,18 +1122,6 @@ OUT;
     public static function getDatacacheDir($original = false)
     {
         return $original ? LC_DIR_DATACACHE : static::buildCopsularDirname(LC_DIR_DATACACHE);
-    }
-
-    /**
-     * Get resources directory
-     *
-     * @param boolean $original Get original path OPTIONAL
-     *
-     * @return string
-     */
-    public static function getResourcesDir($original = false)
-    {
-        return $original ? LC_DIR_CACHE_RESOURCES : static::buildCopsularDirname(LC_DIR_CACHE_RESOURCES);
     }
 
     /**

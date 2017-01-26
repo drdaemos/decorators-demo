@@ -37,6 +37,9 @@ define('LC_DIR_COMPILE',         LC_DIR_VAR . 'run' . LC_DS);
 define('LC_DIR_LOGS',            LC_DIR_VAR . 'log' . LC_DS);
 define('LC_DIR_CACHE_CLASSES',   LC_DIR_COMPILE . 'classes' . LC_DS);
 define('LC_DIR_CACHE_MODULES',   LC_DIR_CACHE_CLASSES . LC_NAMESPACE . LC_DS . LC_MODULE_NAMESPACE . LC_DS);
+define('LC_DIR_TMP',             LC_DIR_VAR . 'tmp' . LC_DS);
+define('LC_DIR_LOCALE',          LC_DIR_VAR . 'locale');
+define('LC_DIR_DATACACHE',       LC_DIR_VAR . 'datacache');
 
 define('LC_DEVELOPER_MODE', true);
 

@@ -9,7 +9,7 @@
 namespace Includes\Reflection;
 
 use Doctrine\Common\Annotations\AnnotationException;
-use Includes\Annotations\Parser\AnnotationParserInterface;
+use Doctrine\Common\Annotations\DocParser;
 use Includes\ClassPathResolverInterface;
 use Includes\Decorator\Utils\Tokenizer;
 use Includes\Utils\Logger;
@@ -24,7 +24,7 @@ class StaticReflector implements StaticReflectorInterface
     private $pathname;
 
     /**
-     * @var AnnotationParserInterface
+     * @var DocParser
      */
     private $annotationParser;
 
@@ -36,7 +36,7 @@ class StaticReflector implements StaticReflectorInterface
     private $classPathResolver;
 
     public function __construct(
-        ClassPathResolverInterface $classPathResolver, AnnotationParserInterface $annotationParser, $pathname
+        ClassPathResolverInterface $classPathResolver, DocParser $annotationParser, $pathname
     ) {
         $this->pathname          = $pathname;
         $this->annotationParser  = $annotationParser;

@@ -233,7 +233,7 @@ abstract class Operator extends \Includes\Utils\AUtils
 
         if (!$result) {
             $result = \Includes\Utils\FileManager::isFileReadable(
-                \Includes\Autoloader::getLCAutoloadDir() . \Includes\Utils\Converter::getClassFile($name)
+                \Includes\Decorator\Utils\Operator::getClassesDir() . \Includes\Utils\Converter::getClassFile($name)
             );
         }
 

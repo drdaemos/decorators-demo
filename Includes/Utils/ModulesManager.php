@@ -28,7 +28,7 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
     /**
      * Modules list file name
      */
-    const MODULES_FILE_NAME = '.decorator.modules.ini.php';
+    const MODULES_FILE_NAME = '.decorator.modules.ini';
 
     /**
      * List of active modules
@@ -322,10 +322,11 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
             );
 
             // Fetch system modules from the disabled modules list
-            $systemModules = static::getSystemModules();
+            // $systemModules = static::getSystemModules();
 
             // Get full list of active modules
-            static::$activeModules = $enabledModules + $systemModules;
+            // static::$activeModules = $enabledModules + $systemModules;
+            static::$activeModules = $enabledModules;
         }
 
         return static::$activeModules;
@@ -343,10 +344,10 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
         if (false === static::$isActiveModulesProcessed) {
 
             // Remove unsupported modules from list
-            static::checkVersions();
+            // static::checkVersions();
 
             // Remove modules with corrupted dependencies
-            static::correctDependencies();
+            // static::correctDependencies();
 
             static::$isActiveModulesProcessed = true;
         }
@@ -441,99 +442,6 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
     }
 
     /**
-     * Check if the license is free
-     *
-     * @return array
-     */
-    public static function getSoftDisableList()
-    {
-        $modules = array_filter(
-            static::getActiveModules(),
-            function ($module) {
-                return !in_array(
-                    $module['author'],
-                    array(
-                        'QSL',
-                        'Qualiteam',
-                        'CDev',
-                        'XC',
-                    ),
-                    true
-                );
-            }
-        );
-
-        return array_keys($modules + \Includes\SafeMode::getUnsafeModulesList());
-    }
-
-    /**
-     * Check if the license is free
-     *
-     * @return array
-     */
-    public static function getHardDisableList()
-    {
-        $modules = array_filter(
-            static::getActiveModules(),
-            function ($module) {
-                return !in_array(
-                    $module['author'],
-                    array(
-                        'CDev',
-                        'XC',
-                    ),
-                    true
-                );
-            }
-        );
-
-        return array_keys($modules + \Includes\SafeMode::getUnsafeModulesList());
-    }
-
-    /**
-     * Check if the license is free
-     *
-     * @param array $restorePoint Restore point
-     *
-     * @return boolean
-     */
-    protected static function restoreToPoint($restorePoint)
-    {
-        $modules = array();
-        $active = static::getActiveModules();
-        foreach ($active as $key => $module) {
-            $toDisable = true;
-            foreach ($restorePoint['current'] as $id => $moduleName) {
-                if ($moduleName !== null && $key === $moduleName) {
-                    $moduleName = null;
-                    $toDisable = false;
-                    break;
-                }
-            }
-            if ($toDisable) {
-                $modules[] = $key;
-            }
-        }
-
-        //modules to enable
-        $toEnable = array();
-        $installed = static::getModulesList();
-        foreach ($restorePoint['current'] as $id => $moduleName) {
-            $isInstalled = array_key_exists($moduleName, $installed);
-            $isActive = array_key_exists($moduleName, $active);
-            if ($isInstalled && !$isActive) {
-                $toEnable[] = $moduleName;
-            }
-        }
-
-        // Enable modules
-        array_walk($toEnable, array('static', 'enableModule'));
-
-        // Disable modules
-        array_walk($modules, array('static', 'disableModule'));
-    }
-
-    /**
      * Disable modules with incorrect dependencies
      *
      * @return void
@@ -570,23 +478,6 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
         }
 
         array_walk_recursive($list, array('static', 'disableModule'));
-    }
-
-    /**
-     * Retrieve the marketplace module for the given one
-     *
-     * @param array $module Module array structure
-     *
-     * @return array
-     */
-    protected static function getMarketplaceModule($module)
-    {
-        $marketplaceModule = \Includes\Utils\Database::fetchAll(
-            'SELECT * FROM ' . static::getTableName() . ' WHERE name= ? AND author= ? AND fromMarketplace= ?',
-            array($module['name'], $module['author'], 1)
-        );
-
-        return empty($marketplaceModule) ? null : $marketplaceModule[0];
     }
 
     // }}}
@@ -1006,7 +897,7 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
      */
     protected static function getModulesFilePath()
     {
-        return LC_DIR_VAR . static::MODULES_FILE_NAME;
+        return LC_DIR_ROOT . static::MODULES_FILE_NAME;
     }
 
     /**
@@ -1038,24 +929,22 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
             static::$cachedModulesList = array();
             $path = static::getModulesFilePath();
             if (\Includes\Utils\FileManager::isFileReadable($path)) {
-                foreach (parse_ini_file($path, true) as $author => $data) {
-                    foreach ($data as $name => $enabled) {
-                        if ($enabled) {
-                            static::$cachedModulesList[$author . '\\' . $name] = array(
-                                'actualName' => static::getActualName($author, $name),
-                                'name'       => $name,
-                                'author'     => $author,
-                                'enabled'    => $enabled,
-                                'moduleName' => $name,
-                                'authorName' => $author,
-                                'yamlLoaded' => false,
-                            );
-                        }
+                foreach (parse_ini_file($path, true) as $section => $data) {
+
+                    if ($section !== 'modules_list') {
+                        continue;
                     }
+
+                    foreach ($data as $name => $enabled) {
+                        static::$cachedModulesList[$name] = array(
+                            'name'       => $name,
+                            'enabled'    => $enabled,
+                        );
+                    }
+
+                    break;
                 }
 
-            } else {
-                static::$cachedModulesList = static::fetchModulesListFromDB();
             }
         }
 
