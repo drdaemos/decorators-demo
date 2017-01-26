@@ -434,7 +434,6 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
                     \XLite::getInstance()->checkVersion(static::callModuleMethod($module, 'getMajorVersion'), '=')
                     && \XLite::getInstance()->checkMinorVersion(static::callModuleMethod($module, 'getMinorRequiredCoreVersion'), '<')
                 )
-                || static::checkEdition($data, $checkLicense)
             ) {
                 static::disableModule($module);
             }
@@ -572,83 +571,6 @@ abstract class ModulesManager extends \Includes\Utils\AUtils
 
         array_walk_recursive($list, array('static', 'disableModule'));
     }
-
-    /**
-     * Check if the table is existed
-     *
-     * @param string $table Table name without DB prefix (short notation)
-     *
-     * @return boolean
-     */
-    protected static function checkTable($table)
-    {
-        $result = \Includes\Utils\Database::fetchAll('SHOW TABLES LIKE \'' . get_db_tables_prefix() . $table . '\'');
-
-        return !empty($result);
-    }
-
-    /**
-     * Check if the license is free
-     *
-     * @return boolean
-     */
-    protected static function getLicenseFlag()
-    {
-        return 'Free' === static::getLicense();
-    }
-
-    /**
-     * Check if the license is free
-     *
-     * @return boolean
-     */
-    protected static function getLicense()
-    {
-        $license = '';
-
-        if (static::checkTable('module_keys')) {
-            $key = \Includes\Utils\Database::fetchAll(
-                'SELECT keyData FROM ' . get_db_tables_prefix() . 'module_keys WHERE name=\'Core\' AND author=\'CDev\''
-            );
-
-            if ($key && isset($key[0])) {
-                $keyData = unserialize($key[0]['keyData']);
-                $license = isset($keyData['editionName']) ? $keyData['editionName'] : '';
-            }
-        }
-
-        return $license;
-    }
-
-
-    /**
-     * Defines if the module must be disabled according license flag
-     *
-     * @param array   $module      Module
-     * @param boolean $licenseFlag License flag
-     *
-     * @return boolean
-     */
-    protected static function checkEdition($module, $licenseFlag)
-    {
-        $result = false;
-
-        if ($licenseFlag) {
-            $marketplaceModule = static::getMarketplaceModule($module);
-            if ($marketplaceModule) {
-                $edition = unserialize($marketplaceModule['editions']);
-                if (empty($edition)) {
-                    $result = false;
-
-                } else {
-                    $result = !in_array(static::getLicense(), $edition, true);
-                }
-            }
-        }
-
-        return $result;
-    }
-
 
     /**
      * Retrieve the marketplace module for the given one

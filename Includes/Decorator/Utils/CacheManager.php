@@ -25,17 +25,6 @@ abstract class CacheManager extends \Includes\Decorator\Utils\AUtils
     const HOOK_WRITE           = 'write';
     const HOOK_STEP_FIRST      = 'step_first';
     const HOOK_STEP_SECOND     = 'step_second';
-    const HOOK_STEP_THIRD      = 'step_third';
-    const HOOK_STEP_FOURTH     = 'step_fourth';
-    const HOOK_STEP_FIFTH      = 'step_fifth';
-    const HOOK_STEP_SIX        = 'step_six';
-    const HOOK_STEP_SEVEN      = 'step_seven';
-    const HOOK_STEP_EIGHT      = 'step_eight';
-    const HOOK_STEP_NINE       = 'step_nine';
-    const HOOK_STEP_TEN        = 'step_ten';
-    const HOOK_STEP_ELEVEN     = 'step_eleven';
-    const HOOK_STEP_TWELVE     = 'step_twelve';
-    const HOOK_STEP_THIRTEEN   = 'step_thirteen';
 
     /**
      * Cache key argument name
@@ -57,6 +46,8 @@ abstract class CacheManager extends \Includes\Decorator\Utils\AUtils
      */
     const CURRENT_FILE_KEY_SUFFIX = null;
 
+    const TIME_LIMIT = 600;
+
     /**
      * Flag: skip step completion
      *
@@ -72,17 +63,6 @@ abstract class CacheManager extends \Includes\Decorator\Utils\AUtils
     protected static $steps = array(
         self::STEP_FIRST,
         self::STEP_SECOND,
-        self::STEP_THIRD,
-        self::STEP_FOURTH,
-        self::STEP_FIFTH,
-        self::STEP_SIX,
-        self::STEP_SEVEN,
-        self::STEP_EIGHT,
-        self::STEP_NINE,
-        self::STEP_TEN,
-        self::STEP_ELEVEN,
-        self::STEP_TWELVE,
-        self::STEP_THIRTEEN,
     );
 
     /**
@@ -465,8 +445,7 @@ OUT;
      */
     protected static function isRebuildAllowed()
     {
-        return defined('XCN_ADMIN_SCRIPT')
-            || \Includes\Utils\ConfigParser::getOptions(array('performance', 'developer_mode'));
+        return defined('REBUILD_MODE_ALLOWED');
     }
 
     /**
@@ -814,15 +793,12 @@ OUT;
         // Write indicator files and show the message
         static::startStep($step);
 
-        // Enable output (if needed)
-        static::setFastCGITimeoutEcho();
-
         // Set version key for view lists
         static::setViewListsVersionKey();
 
         // Perform step-specific actions
         \Includes\Utils\Operator::executeWithCustomMaxExecTime(
-            \Includes\Utils\ConfigParser::getOptions(array('decorator', 'time_limit')),
+            static::TIME_LIMIT,
             static::getStepCallback($step)
         );
 
@@ -925,172 +901,6 @@ OUT;
     {
         // Invoke plugins
         \Includes\Decorator\Utils\PluginManager::invokeHook(static::HOOK_STEP_SECOND);
-    }
-
-    /**
-     * Run handler for the current step
-     *
-     * NOTE: method is public since it's called from
-     * \Includes\Utils\Operator::executeWithCustomMaxExecTime()
-     *
-     * @return void
-     */
-    public static function executeStepHandler3()
-    {
-        // Invoke plugins
-        \Includes\Decorator\Utils\PluginManager::invokeHook(static::HOOK_STEP_THIRD);
-    }
-
-    /**
-     * Run handler for the current step
-     *
-     * NOTE: method is public since it's called from
-     * \Includes\Utils\Operator::executeWithCustomMaxExecTime()
-     *
-     * @return void
-     */
-    public static function executeStepHandler4()
-    {
-        // Invoke plugins
-        \Includes\Decorator\Utils\PluginManager::invokeHook(static::HOOK_STEP_FOURTH);
-    }
-
-    /**
-     * Run handler for the current step
-     *
-     * NOTE: method is public since it's called from
-     * \Includes\Utils\Operator::executeWithCustomMaxExecTime()
-     *
-     * @return void
-     */
-    public static function executeStepHandler5()
-    {
-        // Invoke plugins
-        \Includes\Decorator\Utils\PluginManager::invokeHook(static::HOOK_STEP_FIFTH);
-    }
-
-    /**
-     * Run handler for the current step
-     *
-     * NOTE: method is public since it's called from
-     * \Includes\Utils\Operator::executeWithCustomMaxExecTime()
-     *
-     * @return void
-     */
-    public static function executeStepHandler6()
-    {
-        // Invoke plugins
-        \Includes\Decorator\Utils\PluginManager::invokeHook(static::HOOK_STEP_SIX);
-    }
-
-    /**
-     * Run handler for the current step
-     *
-     * NOTE: method is public since it's called from
-     * \Includes\Utils\Operator::executeWithCustomMaxExecTime()
-     *
-     * @return void
-     */
-    public static function executeStepHandler7()
-    {
-        // Invoke plugins
-        \Includes\Decorator\Utils\PluginManager::invokeHook(static::HOOK_STEP_SEVEN);
-    }
-
-    /**
-     * Run handler for the current step
-     *
-     * NOTE: method is public since it's called from
-     * \Includes\Utils\Operator::executeWithCustomMaxExecTime()
-     *
-     * @return void
-     */
-    public static function executeStepHandler8()
-    {
-        // Invoke plugins
-        \Includes\Decorator\Utils\PluginManager::invokeHook(static::HOOK_STEP_EIGHT);
-    }
-
-    /**
-     * Run handler for the current step
-     *
-     * NOTE: method is public since it's called from
-     * \Includes\Utils\Operator::executeWithCustomMaxExecTime()
-     *
-     * @return void
-     */
-    public static function executeStepHandler9()
-    {
-        // Invoke plugins
-        \Includes\Decorator\Utils\PluginManager::invokeHook(static::HOOK_STEP_NINE);
-
-        // Postprocess step (Quick data)
-        if (\Includes\Decorator\Plugin\Doctrine\Plugin\QuickData\Main::isCalculateCacheAllowed()
-            && \Includes\Decorator\Utils\CacheInfo::get('rebuildBlockMark')
-        ) {
-            $counter = \Includes\Decorator\Plugin\Doctrine\Plugin\QuickData\Main::getCounter();
-            $productsCount = \XLite\Core\Database::getRepo('XLite\Model\Product')->count();
-            if ($counter != $productsCount) {
-                static::$skipStepCompletion = true;
-            }
-        }
-    }
-
-    /**
-     * Run handler for the current step
-     *
-     * NOTE: method is public since it's called from
-     * \Includes\Utils\Operator::executeWithCustomMaxExecTime()
-     *
-     * @return void
-     */
-    public static function executeStepHandler10()
-    {
-        // Invoke plugins
-        \Includes\Decorator\Utils\PluginManager::invokeHook(static::HOOK_STEP_TEN);
-    }
-
-
-    /**
-     * Run handler for the current step
-     *
-     * NOTE: method is public since it's called from
-     * \Includes\Utils\Operator::executeWithCustomMaxExecTime()
-     *
-     * @return void
-     */
-    public static function executeStepHandler11()
-    {
-        // Invoke plugins
-        \Includes\Decorator\Utils\PluginManager::invokeHook(static::HOOK_STEP_ELEVEN);
-    }
-
-    /**
-     * Run handler for the current step
-     *
-     * NOTE: method is public since it's called from
-     * \Includes\Utils\Operator::executeWithCustomMaxExecTime()
-     *
-     * @return void
-     */
-    public static function executeStepHandler12()
-    {
-        // Invoke plugins
-        \Includes\Decorator\Utils\PluginManager::invokeHook(static::HOOK_STEP_TWELVE);
-    }
-
-    /**
-     * Run handler for the current step
-     *
-     * NOTE: method is public since it's called from
-     * \Includes\Utils\Operator::executeWithCustomMaxExecTime()
-     *
-     * @return void
-     */
-    public static function executeStepHandler13()
-    {
-        // Invoke plugins
-        \Includes\Decorator\Utils\PluginManager::invokeHook(static::HOOK_STEP_THIRTEEN);
     }
 
     // }}}
@@ -1259,22 +1069,6 @@ OUT;
     }
 
     // }}}
-
-    // {{{ Fix for the FastCGI timeout (http://bugtracker.qtmsoft.com/view.php?id=41139)
-
-    /**
-     * Set output per tick(s)
-     *
-     * @return void
-     */
-    protected static function setFastCGITimeoutEcho()
-    {
-        if (\Includes\Utils\ConfigParser::getOptions(array('decorator', 'use_output'))) {
-            declare(ticks = 10000);
-
-            register_tick_function(array('\Includes\Utils\Operator', 'showMessage'), '.', false);
-        }
-    }
 
     // }}}
 

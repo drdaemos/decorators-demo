@@ -38,7 +38,7 @@ define('LC_DIR_LOGS',            LC_DIR_VAR . 'log' . LC_DS);
 define('LC_DIR_CACHE_CLASSES',   LC_DIR_COMPILE . 'classes' . LC_DS);
 define('LC_DIR_CACHE_MODULES',   LC_DIR_CACHE_CLASSES . LC_NAMESPACE . LC_DS . LC_MODULE_NAMESPACE . LC_DS);
 
-define('LC_DEVELOPER_MODE', false);
+define('LC_DEVELOPER_MODE', true);
 
 // Composer
 require_once (LC_DIR_ROOT . 'vendor' . LC_DS . 'autoload.php');

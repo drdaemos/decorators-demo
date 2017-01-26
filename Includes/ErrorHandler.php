@@ -62,37 +62,11 @@ abstract class ErrorHandler
      */
     protected static function logInfo($message, $code, $backtrace = null)
     {
-        if (
-            !isset($backtrace)
-            && 'cli' != PHP_SAPI
-        ) {
-            $logLevel = \Includes\Utils\ConfigParser::getOptions(array('log_details', 'level'));
-            $backtrace = static::getBacktrace(LOG_DEBUG === intval($logLevel), true);
+        if ($backtrace) {
+            $message .= PHP_EOL . 'Backtrace: ' . PHP_EOL . $backtrace . PHP_EOL . PHP_EOL;
         }
 
-        $message = date('[d-M-Y H:i:s]') . ' Error (code: ' . $code . '): ' . $message . PHP_EOL;
-
-        // Add additional info
-        $parts = array(
-            'Server API: ' . PHP_SAPI,
-        );
-
-        if (!empty($_SERVER)) {
-            if (isset($_SERVER['REQUEST_METHOD'])) {
-                $parts[] = 'Request method: ' . $_SERVER['REQUEST_METHOD'];
-            }
-
-            if (isset($_SERVER['REQUEST_URI'])) {
-                $parts[] = 'URI: ' . $_SERVER['REQUEST_URI'];
-            }
-        }
-
-        $message .= implode(';' . PHP_EOL, $parts) . ';' . PHP_EOL;
-        if ($backtrace && $code != static::ERROR_CLOSED) {
-            $message .= 'Backtrace: ' . PHP_EOL . $backtrace . PHP_EOL . PHP_EOL;
-        }
-
-        \Includes\Utils\FileManager::write(static::getLogFile($code), $message, FILE_APPEND);
+        \Includes\Utils\Logger::getInstance()->info($message);
     }
 
     /**
@@ -179,37 +153,13 @@ abstract class ErrorHandler
     }
 
     /**
-     * Return path to the log file
-     *
-     * @pram integer $code Error code
-     *
-     * @return string
-     */
-    protected static function getLogFile($code = 0)
-    {
-        switch ($code) {
-            case static::ERROR_CLOSED:
-            case static::ERROR_MAINTENANCE_MODE:
-                $path = LC_DIR_VAR . 'log' . LC_DS . 'actions.log.' . date('Y-m-d') . '.php';
-                break;
-
-            default:
-                $path = LC_DIR_VAR . 'log' . LC_DS . 'php_errors.log.' . date('Y-m-d') . '.php';
-        }
-
-        return $path;
-    }
-
-    /**
      * Return name of the error page file (.html)
      *
      * @return string
      */
     protected static function getErrorPageFileDefault()
     {
-        return \Includes\Utils\Session::issetAdminCookie()
-            ? ('public' . LC_DS . 'error.html')
-            : ('public' . LC_DS . 'customer' . LC_DS . 'error.html');
+        return 'public' . LC_DS . 'error.html';
     }
 
     /**
@@ -219,9 +169,7 @@ abstract class ErrorHandler
      */
     protected static function getErrorPageFileFromConfig()
     {
-        return \Includes\Utils\Session::issetAdminCookie()
-            ? \Includes\Utils\ConfigParser::getOptions(array('error_handling', 'page'))
-            : \Includes\Utils\ConfigParser::getOptions(array('error_handling', 'page_customer'));
+        return static::getErrorPageFileDefault();
     }
 
     /**
@@ -241,7 +189,7 @@ abstract class ErrorHandler
      */
     protected static function getMaintenancePageFileFromConfig()
     {
-        return \Includes\Utils\ConfigParser::getOptions(array('error_handling', 'maintenance'));
+        return static::getMaintenancePageFileDefault();
     }
 
     /**
@@ -320,7 +268,7 @@ abstract class ErrorHandler
      */
     public static function processURL(array $matches)
     {
-        return \Includes\Utils\URLManager::getShopURL($matches[1]);
+        return '';
     }
 
     /**
@@ -460,23 +408,5 @@ abstract class ErrorHandler
     public static function fireErrorAbstractMethodCall($method)
     {
         static::fireError('Abstract method call: ' . $method);
-    }
-
-    /**
-     * Check if LC is installed
-     *
-     * @return void
-     */
-    public static function checkIsLCInstalled()
-    {
-        if (!\Includes\Utils\ConfigParser::getOptions(array('database_details', 'database'))) {
-
-            $link = \Includes\Utils\URLManager::getShopURL('install.php');
-            $message = \Includes\Utils\ConfigParser::getInstallationLng() === 'ru'
-                ? '<a href="' . $link . '">Запустите установку магазина</a>'
-                : '<a href="' . $link . '">Click here</a> to run the installation wizard.';
-
-            static::showErrorPage(self::ERROR_NOT_INSTALLED, $message);
-        }
     }
 }
