@@ -521,9 +521,7 @@ OUT;
     public static function triggerMaintenanceModeError()
     {
         \Includes\ErrorHandler::fireError(
-            \Includes\Utils\ConfigParser::getInstallationLng() === 'ru'
-                ? 'Мы вносим новые изменения в наш магазин. Подождите буквально минуту и магазин будет готов!'
-                : 'We are deploying new changes to our store. One minute and they will go live!',
+            'We are deploying new changes to our store. One minute and they will go live!',
             \Includes\ErrorHandler::ERROR_MAINTENANCE_MODE
         );
     }

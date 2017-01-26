@@ -43,6 +43,8 @@ define('LC_DIR_DATACACHE',       LC_DIR_VAR . 'datacache');
 
 define('LC_DEVELOPER_MODE', true);
 
+require_once (LC_DIR_ROOT . 'error_handler.php');
+
 // Composer
 require_once (LC_DIR_ROOT . 'vendor' . LC_DS . 'autoload.php');
 
