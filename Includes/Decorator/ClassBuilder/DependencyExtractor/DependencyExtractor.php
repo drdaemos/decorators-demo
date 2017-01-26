@@ -177,17 +177,7 @@ class DependencyExtractor implements DependencyExtractorInterface
 
             $deps = [];
 
-            // After all dependencies specified in getDependencies
-            // if only Before not specified
-            $afterModules = array_merge(
-                $reflector->getAfterModules(),
-                array_diff(
-                    ModulesManager::callModuleMethod($module, 'getDependencies'),
-                    $reflector->getBeforeModules()
-                )
-            );
-
-            foreach ($afterModules as $after) {
+            foreach ($reflector->getAfterModules() as $after) {
                 if (isset($modules[$after])) {
                     $deps = array_merge($deps, array_diff($modules[$after], [$file]));
                 }
