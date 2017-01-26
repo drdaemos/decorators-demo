@@ -33,7 +33,13 @@ App-specific code is located inside `classes/DecoratorsDemo` folder. Take a look
 
 ## Managing modules of the system
 
-You can modify `.decorator.modules.ini` to add\enable\disable modules. Each module takes a line inside `[modules_list]` section. Key is the module folder and the value is the enabled state (1 for enabled and 0 for disabled).
+You can modify `.decorator.modules.ini` to add\enable\disable modules. Each module takes a line inside `[modules_list]` section. Key is the module folder and the value is the enabled state (1 for enabled and 0 for disabled). Example:
+
+```ini
+[modules_list]
+Module1 = 1
+OtherModule2 = 0
+```
 
 Module code should be placed inside `classes/DecoratorsDemo/Module/` folder in a separate folder. `Module1` is the example module, but you can add more. Each module is required to have `Definition.php` file inside its folder.
 
